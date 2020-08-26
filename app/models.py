@@ -1,8 +1,12 @@
-from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, Boolean, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from flask_admin.contrib.sqla import ModelView
+from flask_admin import BaseView, expose
+from flask_login import UserMixin, current_user, logout_user
+from flask import redirect
 from app import db, admin
 
+#thuvien
 class Loaisach(db.Model):
     __tablename__ = "loaisach"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -70,6 +74,7 @@ class Khachhang(db.Model):
     thethuvien = relationship('Thethuvien', backref="khachhang", lazy=True)
     phieumuon = relationship('Phieumuon', backref="khachhang", lazy=True)
     bienban = relationship('Bienban', backref="khachhang", lazy=True)
+    #user = relationship('User', backref="khachhang", lazy=True)
 
     def __str__(self):
         return self.tenkh
@@ -150,21 +155,46 @@ class Phieunhap(db.Model):
     def __str__(self):
         return self.tensach
 
+#login_admin
+class User(db.Model, UserMixin):
+    __tablename__ = "user"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    active = Column(Boolean, default=True)
+    username = Column(String(50), nullable=False)
+    password = Column(String(50), nullable=False)
+    #Khachhang_id = Column(Integer, ForeignKey(Khachhang.id), nullable=False)
 
+    def __str__(self):
+        return self.name
 
-admin.add_view(ModelView(Loaisach, db.session))
-admin.add_view(ModelView(Sach, db.session))
-admin.add_view(ModelView(Nxb, db.session))
-admin.add_view(ModelView(Tacgia, db.session))
-admin.add_view(ModelView(Ncc, db.session))
-admin.add_view(ModelView(Khachhang, db.session))
-admin.add_view(ModelView(Thuthu, db.session))
-admin.add_view(ModelView(Thethuvien, db.session))
-admin.add_view(ModelView(Hoadonthe, db.session))
-admin.add_view(ModelView(Baocao, db.session))
-admin.add_view(ModelView(Bienban, db.session))
-admin.add_view(ModelView(Phieumuon, db.session))
-admin.add_view(ModelView(Phieunhap, db.session))
+class AuthenticatedView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+class LogoutView(BaseView):
+    @expose('/')
+    def index(self):
+        logout_user()
+        return redirect("/admin")
+
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+admin.add_view(AuthenticatedView(Loaisach, db.session))
+admin.add_view(AuthenticatedView(Sach, db.session))
+admin.add_view(AuthenticatedView(Nxb, db.session))
+admin.add_view(AuthenticatedView(Tacgia, db.session))
+admin.add_view(AuthenticatedView(Ncc, db.session))
+admin.add_view(AuthenticatedView(Khachhang, db.session))
+admin.add_view(AuthenticatedView(Thuthu, db.session))
+admin.add_view(AuthenticatedView(Thethuvien, db.session))
+admin.add_view(AuthenticatedView(Hoadonthe, db.session))
+admin.add_view(AuthenticatedView(Baocao, db.session))
+admin.add_view(AuthenticatedView(Bienban, db.session))
+admin.add_view(AuthenticatedView(Phieumuon, db.session))
+admin.add_view(AuthenticatedView(Phieunhap, db.session))
+admin.add_view(LogoutView(name="Logout"))
 
 if __name__ == "__main__":
     db.create_all()
